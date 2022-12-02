@@ -6,11 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gtk = { version = "0.5.2", package = "gtk4" }
-
-[package.metadata.vcpkg]
-git = "https://github.com/microsoft/vcpkg"
-#rev = "4c1db68"
-rev = "e46521d"
-dependencies = ["pkgconf"]
-
+crossterm = "0.25.0"
+tui = "0.19.0"

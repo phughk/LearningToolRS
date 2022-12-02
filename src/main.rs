@@ -1,26 +1,42 @@
-use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow};
+use std::{io, thread, time::Duration};
+use tui::{
+    backend::CrosstermBackend,
+    widgets::{Widget, Block, Borders},
+    layout::{Layout, Constraint, Direction},
+    Terminal
+};
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
 
-const APP_ID: &str = "org.gtk_rs.HelloWorld2";
+fn main() -> Result<(), io::Error> {
+    // setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
 
-fn main() {
-    // Create a new application
-    let app = Application::builder().application_id(APP_ID).build();
+    terminal.draw(|f| {
+        let size = f.size();
+        let block = Block::default()
+            .title("Block")
+            .borders(Borders::ALL);
+        f.render_widget(block, size);
+    })?;
 
-    // Connect to "activate" signal of `app`
-    app.connect_activate(build_ui);
+    thread::sleep(Duration::from_millis(5000));
 
-    // Run the application
-    app.run();
-}
+    // restore terminal
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
 
-fn build_ui(app: &Application) {
-    // Create a window and set the title
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("My GTK App")
-        .build();
-
-    // Present window
-    window.present();
+    Ok(())
 }

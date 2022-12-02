@@ -2,33 +2,7 @@
 
 Learning Tool RS is a rust implementation of a tool that allows for learning various concepts.
 
-== Install
-=== Windows (Visual Studio Code toolchain)
-. Install rustup via `rust-init.exe` along with Visual Studio Community.
-. Install https://vcpkg.io/en/getting-started.html[vcpkg].
-. `vcpkg install pkgconf`
-. `vcpkg integrate install`
-. ... I don't know, this doesn't work - use mingw
-
-=== Windows (MinGW toolchain)
-. Install cygwin (or re-run the setup to install missing packages). Make sure the following is installed
-.. mingw-core
-.. gcc
-.. (probably others)
-. Add `C:\cygwin64\bin` to `PATH` environment variable (in PowerShell: `$ENV:PATH+=';C:\cygwin64\bin`)
-
-=== Windows (MSys2 with MinGW toolchain)
-. Install https://www.msys2.org/[MSys2].
-. `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-gtk4 mingw-w64-x86_64-pkg-config`
-. Add library paths to System Path
-.. `C:\\msys64\\mingw64\\include`
-.. `C:\\msys64\\mingw64\\bin`
-.. `C:\\msys64\\mingw64\\lib`
-. sdfsdf
-
-
-=== Linux/Mac
-. Install rustup
-
-=== Shared
-. `cargo run`
+== Build
+```
+cargo run
+```
