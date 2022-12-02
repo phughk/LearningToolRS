@@ -1,6 +1,3 @@
-
-
-
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
