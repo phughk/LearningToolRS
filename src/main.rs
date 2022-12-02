@@ -3,23 +3,22 @@ mod cliargs;
 use std::{io, thread, time::Duration};
 use tui::{
     backend::CrosstermBackend,
-    widgets::{Widget, Block, Borders},
-    layout::{Layout, Constraint, Direction},
+    widgets::{Block, Borders},
     Terminal
 };
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use tracing::info;
-use tracing_subscriber;
+
 
 fn main() -> Result<(), io::Error> {
     tracing_subscriber::fmt::init();
-    let appArgs = cliargs::processArgs();
-    let appArgsStr = format!("{appArgs:?}");
-    info!(appArgs=appArgsStr, "The app args are logged");
+    let app_args = cliargs::process_args();
+    let app_args_str= format!("{app_args:?}");
+    info!(app_args=app_args_str, "The app args are logged");
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
