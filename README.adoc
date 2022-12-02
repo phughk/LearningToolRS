@@ -1,6 +1,6 @@
 = LearningToolRS
 
-image:https://github.com/phughk/LearningToolRS/actions/workflows/rust.yml/badge.svg[Rust Status,50,200]
+image:https://github.com/phughk/LearningToolRS/actions/workflows/rust.yml/badge.svg[Rust Status]
 https://github.com/phughk/LearningToolRS/actions/workflows/rust.yml[Rust Link]
 
 Learning Tool RS is a rust implementation of a tool that allows for learning various concepts.
