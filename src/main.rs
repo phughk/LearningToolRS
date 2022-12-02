@@ -1,3 +1,5 @@
+mod cliargs;
+
 use std::{io, thread, time::Duration};
 use tui::{
     backend::CrosstermBackend,
@@ -10,8 +12,14 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use tracing::info;
+use tracing_subscriber;
 
 fn main() -> Result<(), io::Error> {
+    tracing_subscriber::fmt::init();
+    let appArgs = cliargs::processArgs();
+    let appArgsStr = format!("{appArgs:?}");
+    info!(appArgs=appArgsStr, "The app args are logged");
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();

@@ -6,3 +6,13 @@ Learning Tool RS is a rust implementation of a tool that allows for learning var
 ```
 cargo run
 ```
+
+== Design
+Program execution is as follows
+
+. Launch, pointing at repositories, thus handling separate users and modular datasets
+. List available datasets and pick one
+. Decide to review stats, dataset info, or pick
+. Decide exit conditions of learning session (number of questions, number of loops, progress target, drop off ratios)
+. Review final score and stats
+. Back to main menu
