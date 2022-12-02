@@ -1,4 +1,4 @@
-= LearningToolRS
+= Learning Tool RS
 
 image:https://github.com/phughk/LearningToolRS/actions/workflows/rust.yml/badge.svg[Rust Status]
 https://github.com/phughk/LearningToolRS/actions/workflows/rust.yml[Rust Link]
@@ -21,3 +21,29 @@ Program execution is as follows
 . Decide exit conditions of learning session (number of questions, number of loops, progress target, drop off ratios)
 . Review final score and stats
 . Back to main menu
+
+== Types of questions
+
+Text:
+
+. True/False
+. Single answer from list
+. Multiple answer from list
+. Free-text
+.. Exact match
+.. Subset match
+.. NLP match
+.. Accent match
+. Audio match (Duolingo style)
+. Reverse
+. Pairing
+. Order of list items
+. Multiple categories (ex. list to 3 categories)
+
+
+Graphics:
+
+Sound:
+. Text match
+
+Animation:
