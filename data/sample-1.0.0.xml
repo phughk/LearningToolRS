@@ -25,7 +25,7 @@
             <category id="verb">Verb</category>
             <category id="noun">Noun</category>
             <category id="adjective">Adjective</category>
-            <answer category="verb">Laughing</answer>
+            <answer category="verb">Laughing</answer> <!-- This could hypothetically be (to) "Happy", conflicting with adjective. Then both categories are valid-->
             <answer category="noun">Happiness</answer>
             <answer category="adjective">Happy</answer>
         </entry>

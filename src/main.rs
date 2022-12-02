@@ -19,7 +19,7 @@ fn main() -> Result<(), io::Error> {
     let app_args = cli_args::process_args();
     let app_args_str= format!("{app_args:?}");
     info!(app_args=app_args_str, "The app args are logged");
-    let modules = module_browser::list_modules("./");
+    let modules = module_browser::list_modules("./data");
     let modules_str = format!("{modules:?}");
     info!(modules_str, "processed modules");
     // setup terminal

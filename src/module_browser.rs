@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::Error;
+use xml::reader::EventReader;
 
 #[derive(Debug)]
 pub struct LearningModule {
@@ -28,6 +29,7 @@ pub struct LearningModuleEntry {
 }
 
 pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
+    // TODO handle partial failure... Result<Vec<Result<LearningModule, Error>>, Error> ?
     let paths = fs::read_dir(directory)?;
     let mut ret = Vec::new();
     for path in paths {
@@ -45,4 +47,12 @@ pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
         )
     }
     return Ok(ret)
+}
+
+fn read_module(filename: &str) -> Result<LearningModule, Error> {
+    let reader = EventReader::new(filename);
+    read_module_content(reader);
+}
+
+fn read_module_content(stream: &dyn std::io::Read) -> Result<LearningModule, Error> {
 }
