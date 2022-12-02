@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::Error;
+use std::io;
 use xml::reader::EventReader;
 
 #[derive(Debug)]
@@ -27,14 +27,29 @@ pub struct Version {
 #[derive(Debug)]
 pub struct LearningModuleEntry {}
 
-pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
+pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, io::Error> {
   // TODO handle partial failure... Result<Vec<Result<LearningModule, Error>>, Error> ?
   let paths = fs::read_dir(directory)?;
   let mut ret = Vec::new();
   for path in paths {
-    ret.push(LearningModule {
+    ret.push(read_module(path.unwrap().path().display().to_string())?)
+  }
+  return Ok(ret);
+}
+
+fn read_module(filename: String) -> Result<LearningModule, io::Error> {
+  let file = fs::File::open(filename).unwrap();
+  let file = io::BufReader::new(file);
+  let reader = EventReader::new(file);
+  return read_module_content(reader);
+}
+
+fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, io::Error> {
+    let xmlEvent = stream.next();
+    let strEvent = format!("{xmlEvent:?}");
+    return Ok(LearningModule {
       metadata: LearningModuleMetadata {
-        name: path?.path().display().to_string(),
+        name: strEvent,
         author: String::from("Hugh"),
         updated_date: String::from("this is a date"),
         file_version: Version {
@@ -50,13 +65,4 @@ pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
       },
       entries: vec![],
     })
-  }
-  return Ok(ret);
 }
-
-fn read_module(filename: &str) -> Result<LearningModule, Error> {
-  let reader = EventReader::new(filename);
-  read_module_content(reader);
-}
-
-fn read_module_content(stream: &dyn std::io::Read) -> Result<LearningModule, Error> {}
