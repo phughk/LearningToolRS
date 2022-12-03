@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use crate::error::Error;
 use std::fs;
 use std::io;
@@ -48,6 +49,20 @@ enum LearningModuleEntryType {
   Category,
 }
 
+// Indicates an opening element that has not yet been closed
+#[derive(Debug)]
+#[allow(dead_code)]
+struct DomElement {
+  element_name: String,
+  name: String,
+  author: String,
+  updated_date: String,
+  file_version: Version,
+  format_version: Version,
+  sampleable: bool,
+  correct: bool,
+}
+
 pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
   // TODO handle partial failure... Result<Vec<Result<LearningModule, Error>>, Error> ?
   let paths = fs::read_dir(directory)?;
@@ -87,6 +102,7 @@ fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Resu
       patch: 0,
     },
   }, entries: vec![] };
+  let mut element_stack: VecDeque<DomElement> = VecDeque::new();
   for event in stream {
     match event {
       Ok(XmlEvent::StartDocument {standalone, encoding, version}) => {}
@@ -94,7 +110,37 @@ fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Resu
       Ok(XmlEvent::StartElement {name, attributes, namespace}) => {
         let attr_str = format!("{attributes:?}");
         let namespace_str = format!("{namespace:?}");
-        info!(name=name.to_string(), attribues=attr_str, namespace=namespace_str);
+        info!(name=name.to_string(), attribues=attr_str, namespace=namespace_str, "Started new element");
+        element_stack.push_back(DomElement{
+          element_name: name.to_string(),
+          name: "".to_string(),
+          author: "".to_string(),
+          updated_date: "".to_string(),
+          file_version: Version {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+          format_version: Version {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+          sampleable: false,
+          correct: false,
+        })
+      }
+      Ok(XmlEvent::EndElement {name}) => {
+        let name_str = format!("{name:?}");
+        let popped = element_stack.pop_back();
+        let popped_str = format!("{popped:?}");
+        info!(name=name_str, popped=popped_str, "closing element")
+      }
+      Ok(XmlEvent::CData(s)) => {
+        info!(cdata=s, "received cdata")
+      }
+      Ok(XmlEvent::Characters(s)) => {
+        info!(chars=s, "received characters")
       }
       Err(e) => {
         let e_str = format!("{e:?}");
