@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use xml::reader::EventReader;
+use crate::error::Error;
 
 #[derive(Debug)]
 pub struct LearningModule {
@@ -27,7 +28,7 @@ pub struct Version {
 #[derive(Debug)]
 pub struct LearningModuleEntry {}
 
-pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, io::Error> {
+pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
   // TODO handle partial failure... Result<Vec<Result<LearningModule, Error>>, Error> ?
   let paths = fs::read_dir(directory)?;
   let mut ret = Vec::new();
@@ -37,15 +38,15 @@ pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, io::Error> {
   return Ok(ret);
 }
 
-fn read_module(filename: String) -> Result<LearningModule, io::Error> {
+fn read_module(filename: String) -> Result<LearningModule, Error> {
   let file = fs::File::open(filename).unwrap();
   let file = io::BufReader::new(file);
   let reader = EventReader::new(file);
   return read_module_content(reader);
 }
 
-fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, io::Error> {
-    let xmlEvent = stream.next();
+fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
+    let xmlEvent = stream.next()?;
     let strEvent = format!("{xmlEvent:?}");
     return Ok(LearningModule {
       metadata: LearningModuleMetadata {

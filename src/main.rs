@@ -1,5 +1,6 @@
 mod cli_args;
 mod module_browser;
+mod error;
 
 use crossterm::{
   event::{DisableMouseCapture, EnableMouseCapture},
