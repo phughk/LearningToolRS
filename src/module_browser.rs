@@ -4,12 +4,14 @@ use xml::reader::EventReader;
 use crate::error::Error;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct LearningModule {
   metadata: LearningModuleMetadata,
   entries: Vec<LearningModuleEntry>,
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct LearningModuleMetadata {
   name: String,
   author: String,
@@ -19,6 +21,7 @@ pub struct LearningModuleMetadata {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Version {
   major: u32,
   minor: u32,
@@ -26,6 +29,7 @@ pub struct Version {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct LearningModuleEntry {}
 
 pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
@@ -46,11 +50,11 @@ fn read_module(filename: String) -> Result<LearningModule, Error> {
 }
 
 fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
-    let xmlEvent = stream.next()?;
-    let strEvent = format!("{xmlEvent:?}");
+    let xml_event = stream.next()?;
+    let str_event = format!("{xml_event:?}");
     return Ok(LearningModule {
       metadata: LearningModuleMetadata {
-        name: strEvent,
+        name: str_event,
         author: String::from("Hugh"),
         updated_date: String::from("this is a date"),
         file_version: Version {

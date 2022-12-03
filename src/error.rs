@@ -24,12 +24,6 @@ impl Display for Error {
                     cause
                 )
             }
-            _ => {
-                write!(
-                    f,
-                    "Unmatched issue in main module crate"
-                )
-            }
         }
     }
 }
