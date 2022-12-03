@@ -28,6 +28,7 @@ Text:
 
 . True/False
 . Single answer from list
+.. Property combinations
 . Multiple answer from list
 . Free-text
 .. Exact match

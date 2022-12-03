@@ -1,8 +1,12 @@
 use crate::error::Error;
 use std::fs;
 use std::io;
+use std::io::ErrorKind;
 use tracing::info;
+use tracing::error;
+use xml::attribute::OwnedAttribute;
 use xml::reader::{EventReader, XmlEvent};
+use crate::error::Error::IOError;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -31,7 +35,18 @@ pub struct Version {
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub struct LearningModuleEntry {}
+pub struct LearningModuleEntry {
+  entry_type: LearningModuleEntryType,
+  id: String,
+}
+
+#[derive(Debug)]
+enum LearningModuleEntryType {
+  None,
+  SingleChoice,
+  MultipleChoice,
+  Category,
+}
 
 pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
   // TODO handle partial failure... Result<Vec<Result<LearningModule, Error>>, Error> ?
@@ -57,38 +72,39 @@ fn read_module(filename: String) -> Result<LearningModule, Error> {
 }
 
 fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
-  let xml_event = stream.next()?;
-  let xml_event_cpy = xml_event.clone();
-  match xml_event_cpy {
-    XmlEvent::StartDocument { .. } => {}
-    XmlEvent::StartElement { name, .. } => {
-      info!(ownder_name = name.to_string(), "handled start element")
-    }
-    XmlEvent::EndElement { name } => {
-      info!(owned_name = name.to_string(), "handled end element")
-    }
-    _ => {
-      let ev_str = format!("{xml_event_cpy:?}");
-      info!(event = ev_str, "unhandled element")
-    }
-  }
-  let str_event = format!("{xml_event:?}");
-  return Ok(LearningModule {
-    metadata: LearningModuleMetadata {
-      name: str_event,
-      author: String::from("Hugh"),
-      updated_date: String::from("this is a date"),
-      file_version: Version { major: 1, minor: 0, patch: 0 },
-      format_version: Version { major: 1, minor: 0, patch: 0 },
+  let learning_module = LearningModule{ metadata: LearningModuleMetadata {
+    name: "".to_string(),
+    author: "".to_string(),
+    updated_date: "".to_string(),
+    file_version: Version {
+      major: 0,
+      minor: 0,
+      patch: 0,
     },
-    entries: vec![],
-  });
-}
-
-fn handle_header(potentialHeader: XmlEvent) -> Result<Option<XmlEvent>, Error> {
-  match potentialHeader {
-    XmlEvent::StartDocument { .. } => return Ok(None),
-    XmlEvent::StartElement { name, attributes, namespace } => return Ok(Some(XmlEvent::StartElement { name, attributes, namespace })),
-    _ => return Err(Error::IOError(std::io::Error::new(std::io::ErrorKind::InvalidData, "unhandled error"))),
+    format_version: Version {
+      major: 0,
+      minor: 0,
+      patch: 0,
+    },
+  }, entries: vec![] };
+  for event in stream {
+    match event {
+      Ok(XmlEvent::StartDocument {standalone, encoding, version}) => {}
+      Ok(XmlEvent::EndDocument{}) => {}
+      Ok(XmlEvent::StartElement {name, attributes, namespace}) => {
+        let attr_str = format!("{attributes:?}");
+        let namespace_str = format!("{namespace:?}");
+        info!(name=name.to_string(), attribues=attr_str, namespace=namespace_str);
+      }
+      Err(e) => {
+        let e_str = format!("{e:?}");
+        error!(error=e_str, "failed to process event");
+        return Err(IOError(io::Error::new(ErrorKind::InvalidData, e)))
+      }
+      _ => {
+        info!("unhandled event")
+      }
+    }
   }
+  return Ok(learning_module)
 }
