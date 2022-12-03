@@ -1,1 +1,4 @@
 tab_spaces=2
+max_width=1000000
+chain_width=40
+struct_lit_width=40

@@ -1,6 +1,6 @@
 mod cli_args;
-mod module_browser;
 mod error;
+mod module_browser;
 
 use crossterm::{
   event::{DisableMouseCapture, EnableMouseCapture},
@@ -32,7 +32,9 @@ fn main() -> Result<(), error::Error> {
 
   terminal.draw(|f| {
     let size = f.size();
-    let block = Block::default().title("Block").borders(Borders::ALL);
+    let block = Block::default()
+      .title("Block")
+      .borders(Borders::ALL);
     f.render_widget(block, size);
   })?;
 
@@ -40,11 +42,7 @@ fn main() -> Result<(), error::Error> {
 
   // restore terminal
   disable_raw_mode()?;
-  execute!(
-    terminal.backend_mut(),
-    LeaveAlternateScreen,
-    DisableMouseCapture
-  )?;
+  execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
   terminal.show_cursor()?;
 
   Ok(())

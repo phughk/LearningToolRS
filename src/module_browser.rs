@@ -1,7 +1,7 @@
+use crate::error::Error;
 use std::fs;
 use std::io;
 use xml::reader::EventReader;
-use crate::error::Error;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -37,7 +37,13 @@ pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
   let paths = fs::read_dir(directory)?;
   let mut ret = Vec::new();
   for path in paths {
-    ret.push(read_module(path.unwrap().path().display().to_string())?)
+    ret.push(read_module(
+      path
+        .unwrap()
+        .path()
+        .display()
+        .to_string(),
+    )?)
   }
   return Ok(ret);
 }
@@ -50,24 +56,16 @@ fn read_module(filename: String) -> Result<LearningModule, Error> {
 }
 
 fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
-    let xml_event = stream.next()?;
-    let str_event = format!("{xml_event:?}");
-    return Ok(LearningModule {
-      metadata: LearningModuleMetadata {
-        name: str_event,
-        author: String::from("Hugh"),
-        updated_date: String::from("this is a date"),
-        file_version: Version {
-          major: 1,
-          minor: 0,
-          patch: 0,
-        },
-        format_version: Version {
-          major: 1,
-          minor: 0,
-          patch: 0,
-        },
-      },
-      entries: vec![],
-    })
+  let xml_event = stream.next()?;
+  let str_event = format!("{xml_event:?}");
+  return Ok(LearningModule {
+    metadata: LearningModuleMetadata {
+      name: str_event,
+      author: String::from("Hugh"),
+      updated_date: String::from("this is a date"),
+      file_version: Version { major: 1, minor: 0, patch: 0 },
+      format_version: Version { major: 1, minor: 0, patch: 0 },
+    },
+    entries: vec![],
+  });
 }
