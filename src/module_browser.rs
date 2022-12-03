@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::collections::VecDeque;
 use crate::error::Error;
 use std::fs;
@@ -5,18 +6,28 @@ use std::io;
 use std::io::ErrorKind;
 use tracing::info;
 use tracing::error;
+use text_io::scan;
 use xml::attribute::OwnedAttribute;
 use xml::reader::{EventReader, XmlEvent};
 use crate::error::Error::IOError;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct LearningModule {
   metadata: LearningModuleMetadata,
   entries: Vec<LearningModuleEntry>,
 }
 
-#[derive(Debug)]
+impl LearningModule {
+ fn new() -> LearningModule {
+   return LearningModule{
+     metadata: LearningModuleMetadata::new(),
+     entries: vec![]
+   }
+ }
+}
+
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct LearningModuleMetadata {
   name: String,
@@ -26,7 +37,27 @@ pub struct LearningModuleMetadata {
   format_version: Version,
 }
 
-#[derive(Debug)]
+impl LearningModuleMetadata {
+  fn new() -> LearningModuleMetadata {
+    return LearningModuleMetadata{
+      name: "".to_string(),
+      author: "".to_string(),
+      updated_date: "".to_string(),
+      file_version: Version {
+        major: 0,
+        minor: 0,
+        patch: 0,
+      },
+      format_version: Version {
+        major: 0,
+        minor: 0,
+        patch: 0,
+      },
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct Version {
   major: u32,
@@ -34,14 +65,14 @@ pub struct Version {
   patch: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct LearningModuleEntry {
   entry_type: LearningModuleEntryType,
   id: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum LearningModuleEntryType {
   None,
   SingleChoice,
@@ -50,7 +81,7 @@ enum LearningModuleEntryType {
 }
 
 // Indicates an opening element that has not yet been closed
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 struct DomElement {
   element_name: String,
@@ -61,6 +92,29 @@ struct DomElement {
   format_version: Version,
   sampleable: bool,
   correct: bool,
+}
+
+impl DomElement {
+  fn new() -> DomElement {
+    return DomElement{
+      element_name: "".to_string(),
+      name: "".to_string(),
+      author: "".to_string(),
+      updated_date: "".to_string(),
+      file_version: Version {
+        major: 0,
+        minor: 0,
+        patch: 0,
+      },
+      format_version: Version {
+        major: 0,
+        minor: 0,
+        patch: 0,
+      },
+      sampleable: false,
+      correct: false,
+    }
+  }
 }
 
 pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
@@ -87,21 +141,7 @@ fn read_module(filename: String) -> Result<LearningModule, Error> {
 }
 
 fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
-  let learning_module = LearningModule{ metadata: LearningModuleMetadata {
-    name: "".to_string(),
-    author: "".to_string(),
-    updated_date: "".to_string(),
-    file_version: Version {
-      major: 0,
-      minor: 0,
-      patch: 0,
-    },
-    format_version: Version {
-      major: 0,
-      minor: 0,
-      patch: 0,
-    },
-  }, entries: vec![] };
+  let learning_module = LearningModule::new();
   let mut element_stack: VecDeque<DomElement> = VecDeque::new();
   for event in stream {
     match event {
@@ -111,24 +151,9 @@ fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Resu
         let attr_str = format!("{attributes:?}");
         let namespace_str = format!("{namespace:?}");
         info!(name=name.to_string(), attribues=attr_str, namespace=namespace_str, "Started new element");
-        element_stack.push_back(DomElement{
-          element_name: name.to_string(),
-          name: "".to_string(),
-          author: "".to_string(),
-          updated_date: "".to_string(),
-          file_version: Version {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-          format_version: Version {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-          sampleable: false,
-          correct: false,
-        })
+        let mut element = DomElement::new();
+        element.name = name.to_string();
+        element_stack.push_back(element);
       }
       Ok(XmlEvent::EndElement {name}) => {
         let name_str = format!("{name:?}");
@@ -136,11 +161,13 @@ fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Resu
         let popped_str = format!("{popped:?}");
         info!(name=name_str, popped=popped_str, "closing element")
       }
-      Ok(XmlEvent::CData(s)) => {
-        info!(cdata=s, "received cdata")
-      }
       Ok(XmlEvent::Characters(s)) => {
-        info!(chars=s, "received characters")
+        info!(chars=s, "received characters");
+        let mut popped = element_stack.pop_back().ok_or(IOError(std::io::Error::new(ErrorKind::InvalidInput, "expected to pop element but none found")))?.clone();
+        if popped.name==String::from("file_version") {
+          popped.file_version = parse_version(s);
+          element_stack.push_back(popped);
+        }
       }
       Err(e) => {
         let e_str = format!("{e:?}");
@@ -153,4 +180,10 @@ fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Resu
     }
   }
   return Ok(learning_module)
+}
+
+fn parse_version(version_str: String) -> Version {
+  let (major, minor, patch): (u32, u32, u32);
+  scan!("{}.{}.{}", major, minor, patch);
+  return Version{major: major, minor: minor, patch:patch};
 }
