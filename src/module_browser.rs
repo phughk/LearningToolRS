@@ -1,7 +1,8 @@
 use crate::error::Error;
 use std::fs;
 use std::io;
-use xml::reader::EventReader;
+use tracing::info;
+use xml::reader::{EventReader, XmlEvent};
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -57,6 +58,20 @@ fn read_module(filename: String) -> Result<LearningModule, Error> {
 
 fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
   let xml_event = stream.next()?;
+  let xml_event_cpy = xml_event.clone();
+  match xml_event_cpy {
+    XmlEvent::StartDocument { .. } => {}
+    XmlEvent::StartElement { name, .. } => {
+      info!(ownder_name = name.to_string(), "handled start element")
+    }
+    XmlEvent::EndElement { name } => {
+      info!(owned_name = name.to_string(), "handled end element")
+    }
+    _ => {
+      let ev_str = format!("{xml_event_cpy:?}");
+      info!(event = ev_str, "unhandled element")
+    }
+  }
   let str_event = format!("{xml_event:?}");
   return Ok(LearningModule {
     metadata: LearningModuleMetadata {
@@ -68,4 +83,12 @@ fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Resu
     },
     entries: vec![],
   });
+}
+
+fn handle_header(potentialHeader: XmlEvent) -> Result<Option<XmlEvent>, Error> {
+  match potentialHeader {
+    XmlEvent::StartDocument { .. } => return Ok(None),
+    XmlEvent::StartElement { name, attributes, namespace } => return Ok(Some(XmlEvent::StartElement { name, attributes, namespace })),
+    _ => return Err(Error::IOError(std::io::Error::new(std::io::ErrorKind::InvalidData, "unhandled error"))),
+  }
 }

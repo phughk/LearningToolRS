@@ -31,6 +31,8 @@ Text:
 . Multiple answer from list
 . Free-text
 .. Exact match
+.. Exact match numeric
+.. Within range numeric
 .. Subset match
 .. NLP match
 .. Accent match
