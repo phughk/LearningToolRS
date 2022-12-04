@@ -1,17 +1,21 @@
-use std::cmp::min;
-use std::collections::VecDeque;
 use crate::error::Error;
+use crate::error::Error::IOError;
+use std::collections::VecDeque;
 use std::fs;
 use std::io;
 use std::io::ErrorKind;
-use tracing::info;
+use std::io::ErrorKind::InvalidInput;
+use std::str::FromStr;
+use scan_fmt::scan_fmt;
 use tracing::error;
-use text_io::scan;
+use tracing::info;
 use xml::attribute::OwnedAttribute;
 use xml::reader::{EventReader, XmlEvent};
-use crate::error::Error::IOError;
+use serde::Serialize;
+use serde::Deserialize;
+use serde_xml_rs::de::Deserializer;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct LearningModule {
   metadata: LearningModuleMetadata,
@@ -19,15 +23,15 @@ pub struct LearningModule {
 }
 
 impl LearningModule {
- fn new() -> LearningModule {
-   return LearningModule{
-     metadata: LearningModuleMetadata::new(),
-     entries: vec![]
-   }
- }
+  fn new() -> LearningModule {
+    return LearningModule {
+      metadata: LearningModuleMetadata::new(),
+      entries: vec![],
+    };
+  }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct LearningModuleMetadata {
   name: String,
@@ -39,25 +43,17 @@ pub struct LearningModuleMetadata {
 
 impl LearningModuleMetadata {
   fn new() -> LearningModuleMetadata {
-    return LearningModuleMetadata{
+    return LearningModuleMetadata {
       name: "".to_string(),
       author: "".to_string(),
       updated_date: "".to_string(),
-      file_version: Version {
-        major: 0,
-        minor: 0,
-        patch: 0,
-      },
-      format_version: Version {
-        major: 0,
-        minor: 0,
-        patch: 0,
-      },
-    }
+      file_version: Version { major: 0, minor: 0, patch: 0 },
+      format_version: Version { major: 0, minor: 0, patch: 0 },
+    };
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Version {
   major: u32,
@@ -65,14 +61,14 @@ pub struct Version {
   patch: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct LearningModuleEntry {
   entry_type: LearningModuleEntryType,
   id: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum LearningModuleEntryType {
   None,
   SingleChoice,
@@ -80,12 +76,28 @@ enum LearningModuleEntryType {
   Category,
 }
 
+impl FromStr for LearningModuleEntryType {
+  type Err = ();
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    // TODO sanitise? cap, space
+    match s {
+      "single-choice" => Ok(LearningModuleEntryType::SingleChoice),
+      "multiple-choice" => Ok(LearningModuleEntryType::MultipleChoice),
+      "category" => Ok(LearningModuleEntryType::Category),
+      "" => Ok(LearningModuleEntryType::None),
+      _ => Err(()),
+    }
+  }
+}
+
 // Indicates an opening element that has not yet been closed
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 struct DomElement {
-  element_name: String,
-  name: String,
+  element_name: String, // xml tag name
+  prop_type: String,
+  name: String, // xml name property
   author: String,
   updated_date: String,
   file_version: Version,
@@ -96,24 +108,17 @@ struct DomElement {
 
 impl DomElement {
   fn new() -> DomElement {
-    return DomElement{
+    return DomElement {
       element_name: "".to_string(),
+      prop_type: "".to_string(),
       name: "".to_string(),
       author: "".to_string(),
       updated_date: "".to_string(),
-      file_version: Version {
-        major: 0,
-        minor: 0,
-        patch: 0,
-      },
-      format_version: Version {
-        major: 0,
-        minor: 0,
-        patch: 0,
-      },
+      file_version: Version { major: 0, minor: 0, patch: 0 },
+      format_version: Version { major: 0, minor: 0, patch: 0 },
       sampleable: false,
       correct: false,
-    }
+    };
   }
 }
 
@@ -140,50 +145,27 @@ fn read_module(filename: String) -> Result<LearningModule, Error> {
   return read_module_content(reader);
 }
 
-fn read_module_content(mut stream: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
-  let learning_module = LearningModule::new();
-  let mut element_stack: VecDeque<DomElement> = VecDeque::new();
-  for event in stream {
-    match event {
-      Ok(XmlEvent::StartDocument {standalone, encoding, version}) => {}
-      Ok(XmlEvent::EndDocument{}) => {}
-      Ok(XmlEvent::StartElement {name, attributes, namespace}) => {
-        let attr_str = format!("{attributes:?}");
-        let namespace_str = format!("{namespace:?}");
-        info!(name=name.to_string(), attribues=attr_str, namespace=namespace_str, "Started new element");
-        let mut element = DomElement::new();
-        element.name = name.to_string();
-        element_stack.push_back(element);
-      }
-      Ok(XmlEvent::EndElement {name}) => {
-        let name_str = format!("{name:?}");
-        let popped = element_stack.pop_back();
-        let popped_str = format!("{popped:?}");
-        info!(name=name_str, popped=popped_str, "closing element")
-      }
-      Ok(XmlEvent::Characters(s)) => {
-        info!(chars=s, "received characters");
-        let mut popped = element_stack.pop_back().ok_or(IOError(std::io::Error::new(ErrorKind::InvalidInput, "expected to pop element but none found")))?.clone();
-        if popped.name==String::from("file_version") {
-          popped.file_version = parse_version(s);
-          element_stack.push_back(popped);
-        }
-      }
-      Err(e) => {
-        let e_str = format!("{e:?}");
-        error!(error=e_str, "failed to process event");
-        return Err(IOError(io::Error::new(ErrorKind::InvalidData, e)))
-      }
-      _ => {
-        info!("unhandled event")
-      }
+fn read_module_content(event_reader: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
+  match LearningModule::deserialize(&mut Deserializer::new(event_reader)) {
+    Ok(x) => {
+      return Ok(x)
+    }
+    Err(cause) => {
+      return Err(Error::SerdeError(cause))
     }
   }
-  return Ok(learning_module)
 }
 
 fn parse_version(version_str: String) -> Version {
-  let (major, minor, patch): (u32, u32, u32);
-  scan!("{}.{}.{}", major, minor, patch);
-  return Version{major: major, minor: minor, patch:patch};
+  if let Ok((major, minor, patch)) = scan_fmt!(&version_str.to_string(), "{d}.{d}.{d}", u32, u32, u32) {
+    return Version { major, minor, patch };
+  }
+  return Version{major: 0, minor: 0, patch: 0};
+}
+
+fn get_attribute(attributes: Vec<OwnedAttribute>, key: String) -> Option<String> {
+  return attributes
+      .iter()
+      .find(|own_at| own_at.name.local_name == key)
+      .map(|own| own.value.clone())
 }

@@ -5,6 +5,7 @@ use std::fmt::{Display, Formatter};
 pub enum Error {
   IOError(std::io::Error),
   XMLReaderError(xml::reader::Error),
+  SerdeError(serde_xml_rs::Error),
 }
 
 impl Display for Error {
@@ -14,7 +15,10 @@ impl Display for Error {
         write!(f, "Issue with IO: {}", cause)
       }
       Error::XMLReaderError(cause) => {
-        write!(f, "Issue with XML: {}", cause)
+        write!(f, "Issue with IO in XML: {}", cause)
+      }
+      Error::SerdeError(cause) => {
+        write!(f, "Issue with XML serde: {}", cause)
       }
     }
   }
