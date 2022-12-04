@@ -9,7 +9,7 @@ use std::fs;
 use std::io;
 use std::str::FromStr;
 use serde::de::Visitor;
-use xml::attribute::OwnedAttribute;
+
 use xml::reader::EventReader;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,15 +17,6 @@ use xml::reader::EventReader;
 pub struct LearningModule {
   metadata: LearningModuleMetadata,
   entries: Vec<LearningModuleEntry>,
-}
-
-impl LearningModule {
-  fn new() -> LearningModule {
-    return LearningModule {
-      metadata: LearningModuleMetadata::new(),
-      entries: vec![],
-    };
-  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,18 +27,6 @@ pub struct LearningModuleMetadata {
   updated_date: String,
   file_version: Version,
   format_version: Version,
-}
-
-impl LearningModuleMetadata {
-  fn new() -> LearningModuleMetadata {
-    return LearningModuleMetadata {
-      name: "".to_string(),
-      author: "".to_string(),
-      updated_date: "".to_string(),
-      file_version: Version { major: 0, minor: 0, patch: 0 },
-      format_version: Version { major: 0, minor: 0, patch: 0 },
-    };
-  }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -126,22 +105,6 @@ struct DomElement {
   correct: bool,
 }
 
-impl DomElement {
-  fn new() -> DomElement {
-    return DomElement {
-      element_name: "".to_string(),
-      prop_type: "".to_string(),
-      name: "".to_string(),
-      author: "".to_string(),
-      updated_date: "".to_string(),
-      file_version: Version { major: 0, minor: 0, patch: 0 },
-      format_version: Version { major: 0, minor: 0, patch: 0 },
-      sampleable: false,
-      correct: false,
-    };
-  }
-}
-
 pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
   // TODO handle partial failure... Result<Vec<Result<LearningModule, Error>>, Error> ?
   let paths = fs::read_dir(directory)?;
@@ -170,11 +133,4 @@ fn read_module_content(event_reader: EventReader<io::BufReader<fs::File>>) -> Re
     Ok(x) => return Ok(x),
     Err(cause) => return Err(Error::SerdeError(cause)),
   }
-}
-
-fn get_attribute(attributes: Vec<OwnedAttribute>, key: String) -> Option<String> {
-  return attributes
-    .iter()
-    .find(|own_at| own_at.name.local_name == key)
-    .map(|own| own.value.clone());
 }
