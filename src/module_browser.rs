@@ -1,11 +1,14 @@
+use std::fmt::Formatter;
 use crate::error::Error;
 use scan_fmt::scan_fmt;
 use serde::Deserialize;
+use serde::de;
 use serde::Serialize;
 use serde_xml_rs::de::Deserializer;
 use std::fs;
 use std::io;
 use std::str::FromStr;
+use serde::de::Visitor;
 use xml::attribute::OwnedAttribute;
 use xml::reader::EventReader;
 
@@ -47,12 +50,35 @@ impl LearningModuleMetadata {
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[allow(dead_code)]
 pub struct Version {
   major: u32,
   minor: u32,
   patch: u32,
+}
+
+struct VersionVisitor {}
+
+impl <'de> Visitor<'de> for VersionVisitor {
+  type Value = Version;
+
+  fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+    formatter.write_str("expecting version format <major>.<minor>.<patch> strictly")
+  }
+
+  fn visit_string<E>(self, v: String) -> Result<Self::Value, E> where E: de::Error {
+    if let Ok((major, minor, patch)) = scan_fmt!(&v.to_string(), "{d}.{d}.{d}", u32, u32, u32) {
+      return Ok(Version { major, minor, patch });
+    }
+    return Err(de::Error::custom("not a version"))
+  }
+}
+
+impl <'de> de::Deserialize<'de> for Version {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: serde::Deserializer<'de> {
+    deserializer.deserialize_string(VersionVisitor{})
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -144,13 +170,6 @@ fn read_module_content(event_reader: EventReader<io::BufReader<fs::File>>) -> Re
     Ok(x) => return Ok(x),
     Err(cause) => return Err(Error::SerdeError(cause)),
   }
-}
-
-fn parse_version(version_str: String) -> Version {
-  if let Ok((major, minor, patch)) = scan_fmt!(&version_str.to_string(), "{d}.{d}.{d}", u32, u32, u32) {
-    return Version { major, minor, patch };
-  }
-  return Version { major: 0, minor: 0, patch: 0 };
 }
 
 fn get_attribute(attributes: Vec<OwnedAttribute>, key: String) -> Option<String> {
