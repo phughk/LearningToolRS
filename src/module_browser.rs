@@ -1,19 +1,13 @@
 use crate::error::Error;
-use crate::error::Error::IOError;
-use std::collections::VecDeque;
+use scan_fmt::scan_fmt;
+use serde::Deserialize;
+use serde::Serialize;
+use serde_xml_rs::de::Deserializer;
 use std::fs;
 use std::io;
-use std::io::ErrorKind;
-use std::io::ErrorKind::InvalidInput;
 use std::str::FromStr;
-use scan_fmt::scan_fmt;
-use tracing::error;
-use tracing::info;
 use xml::attribute::OwnedAttribute;
-use xml::reader::{EventReader, XmlEvent};
-use serde::Serialize;
-use serde::Deserialize;
-use serde_xml_rs::de::Deserializer;
+use xml::reader::EventReader;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
@@ -147,12 +141,8 @@ fn read_module(filename: String) -> Result<LearningModule, Error> {
 
 fn read_module_content(event_reader: EventReader<io::BufReader<fs::File>>) -> Result<LearningModule, Error> {
   match LearningModule::deserialize(&mut Deserializer::new(event_reader)) {
-    Ok(x) => {
-      return Ok(x)
-    }
-    Err(cause) => {
-      return Err(Error::SerdeError(cause))
-    }
+    Ok(x) => return Ok(x),
+    Err(cause) => return Err(Error::SerdeError(cause)),
   }
 }
 
@@ -160,12 +150,12 @@ fn parse_version(version_str: String) -> Version {
   if let Ok((major, minor, patch)) = scan_fmt!(&version_str.to_string(), "{d}.{d}.{d}", u32, u32, u32) {
     return Version { major, minor, patch };
   }
-  return Version{major: 0, minor: 0, patch: 0};
+  return Version { major: 0, minor: 0, patch: 0 };
 }
 
 fn get_attribute(attributes: Vec<OwnedAttribute>, key: String) -> Option<String> {
   return attributes
-      .iter()
-      .find(|own_at| own_at.name.local_name == key)
-      .map(|own| own.value.clone())
+    .iter()
+    .find(|own_at| own_at.name.local_name == key)
+    .map(|own| own.value.clone());
 }
