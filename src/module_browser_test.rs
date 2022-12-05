@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-  use crate::module_browser::{Answer, Category, EntryTag, LearningModuleEntry, LearningModuleEntryType, Question};
+  use crate::module_browser::{Answer, Category, EntryTag, LearningModuleEntries, LearningModuleEntry, LearningModuleEntryType, Question};
   use serde::Deserialize;
   use serde_xml_rs::Deserializer;
   use xml::EventReader;
@@ -65,6 +65,43 @@ mod tests {
           label: "An answer".to_string(),
         }),
       ],
+    };
+    match actual {
+      Ok(act) => {
+        assert_eq!(act, expected)
+      }
+      Err(e) => {
+        panic!("failed to deserialise: {}", e)
+      }
+    }
+  }
+
+  #[test]
+  fn entries_des_test() {
+    let input = r#"
+    <entries>
+      <entry id="abc-123" type="single-choice" sampleable="true">
+        <question>the question</question>
+        <answer correct="true" id="a1">An answer</answer>
+      </entry>
+    </entries>
+    "#;
+    let actual = LearningModuleEntries::deserialize(&mut Deserializer::new(EventReader::new(input.as_bytes())));
+    let expected = LearningModuleEntries {
+      entries: vec![LearningModuleEntry {
+        entry_type: LearningModuleEntryType::SingleChoice,
+        id: "abc-123".to_string(),
+        sampleable: true,
+        entry_tags: vec![
+          EntryTag::Question(Question { label: "the question".to_string() }),
+          EntryTag::Answer(Answer {
+            correct: true,
+            id: "a1".to_string(),
+            category: "".to_string(),
+            label: "An answer".to_string(),
+          }),
+        ],
+      }],
     };
     match actual {
       Ok(act) => {

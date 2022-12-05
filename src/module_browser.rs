@@ -11,14 +11,22 @@ use std::io;
 
 use xml::reader::EventReader;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[allow(dead_code)]
 pub struct LearningModule {
   pub metadata: LearningModuleMetadata,
+  #[serde(rename = "entries")]
   pub entries: Vec<LearningModuleEntry>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
+pub struct LearningModuleEntries {
+  #[serde(rename = "$value")]
+  pub entries: Vec<LearningModuleEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[allow(dead_code)]
 #[serde(rename_all = "kebab-case")]
 pub struct LearningModuleMetadata {
@@ -29,7 +37,7 @@ pub struct LearningModuleMetadata {
   pub format_version: Version,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[allow(dead_code)]
 pub struct Version {
   pub major: u32,
