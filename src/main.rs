@@ -24,6 +24,9 @@ fn main() -> Result<(), error::Error> {
   let modules = module_browser::list_modules("./data")?;
   let modules_str = format!("{modules:?}");
   info!(modules_str, "processed modules");
+  terminal_loop()
+}
+fn terminal_loop() -> Result<(), error::Error> {
   // setup terminal
   enable_raw_mode()?;
   let mut stdout = io::stdout();
