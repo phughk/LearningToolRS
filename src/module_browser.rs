@@ -1,108 +1,131 @@
-use std::fmt::Formatter;
 use crate::error::Error;
 use scan_fmt::scan_fmt;
-use serde::Deserialize;
 use serde::de;
+use serde::de::Visitor;
+use serde::Deserialize;
 use serde::Serialize;
 use serde_xml_rs::de::Deserializer;
+use std::fmt::Formatter;
 use std::fs;
 use std::io;
-use std::str::FromStr;
-use serde::de::Visitor;
 
 use xml::reader::EventReader;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct LearningModule {
-  metadata: LearningModuleMetadata,
-  entries: Vec<LearningModuleEntry>,
+  pub metadata: LearningModuleMetadata,
+  pub entries: Vec<LearningModuleEntry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
+#[serde(rename_all = "kebab-case")]
 pub struct LearningModuleMetadata {
-  name: String,
-  author: String,
-  updated_date: String,
-  file_version: Version,
-  format_version: Version,
+  pub name: String,
+  pub author: String,
+  pub updated: String,
+  pub file_version: Version,
+  pub format_version: Version,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[allow(dead_code)]
 pub struct Version {
-  major: u32,
-  minor: u32,
-  patch: u32,
+  pub major: u32,
+  pub minor: u32,
+  pub patch: u32,
 }
 
 struct VersionVisitor {}
 
-impl <'de> Visitor<'de> for VersionVisitor {
+impl<'de> Visitor<'de> for VersionVisitor {
   type Value = Version;
 
   fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
     formatter.write_str("expecting version format <major>.<minor>.<patch> strictly")
   }
 
-  fn visit_string<E>(self, v: String) -> Result<Self::Value, E> where E: de::Error {
+  fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+  where
+    E: de::Error,
+  {
     if let Ok((major, minor, patch)) = scan_fmt!(&v.to_string(), "{d}.{d}.{d}", u32, u32, u32) {
       return Ok(Version { major, minor, patch });
     }
-    return Err(de::Error::custom("not a version"))
+    return Err(de::Error::custom("not a version"));
   }
 }
 
-impl <'de> de::Deserialize<'de> for Version {
-  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: serde::Deserializer<'de> {
-    deserializer.deserialize_string(VersionVisitor{})
+impl<'de> de::Deserialize<'de> for Version {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: serde::Deserializer<'de>,
+  {
+    deserializer.deserialize_string(VersionVisitor {})
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[allow(dead_code)]
 pub struct LearningModuleEntry {
-  entry_type: LearningModuleEntryType,
-  id: String,
+  #[serde(rename = "type", default)]
+  pub entry_type: LearningModuleEntryType,
+  pub id: String,
+  #[serde(default)]
+  pub sampleable: bool,
+  #[serde(rename = "$value")]
+  pub entry_tags: Vec<EntryTag>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-enum LearningModuleEntryType {
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
+#[serde(rename_all = "kebab-case")]
+pub enum EntryTag {
+  Question(Question),
+  Answer(Answer),
+  Category(Category),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
+pub struct Question {
+  #[serde(rename = "$value")]
+  pub label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
+pub struct Answer {
+  pub correct: bool,
+  pub id: String,
+  #[serde(default)]
+  pub category: String,
+  #[serde(rename = "$value")]
+  pub label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
+pub struct Category {
+  pub id: String,
+  #[serde(rename = "$value")]
+  pub label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum LearningModuleEntryType {
   None,
   SingleChoice,
   MultipleChoice,
   Category,
 }
 
-impl FromStr for LearningModuleEntryType {
-  type Err = ();
-
-  fn from_str(s: &str) -> Result<Self, Self::Err> {
-    // TODO sanitise? cap, space
-    match s {
-      "single-choice" => Ok(LearningModuleEntryType::SingleChoice),
-      "multiple-choice" => Ok(LearningModuleEntryType::MultipleChoice),
-      "category" => Ok(LearningModuleEntryType::Category),
-      "" => Ok(LearningModuleEntryType::None),
-      _ => Err(()),
-    }
+impl Default for LearningModuleEntryType {
+  fn default() -> Self {
+    return LearningModuleEntryType::None;
   }
-}
-
-// Indicates an opening element that has not yet been closed
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(dead_code)]
-struct DomElement {
-  element_name: String, // xml tag name
-  prop_type: String,
-  name: String, // xml name property
-  author: String,
-  updated_date: String,
-  file_version: Version,
-  format_version: Version,
-  sampleable: bool,
-  correct: bool,
 }
 
 pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {

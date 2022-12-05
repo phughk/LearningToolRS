@@ -40,7 +40,7 @@ Text:
 . Audio match (Duolingo style)
 . Reverse
 . Pairing
-. Order of list items
+. Order of list items (ex sequence of events)
 . Multiple categories (ex. list to 3 categories)
 
 
