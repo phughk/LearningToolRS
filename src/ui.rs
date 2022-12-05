@@ -1,17 +1,18 @@
 use crate::error::Error;
+use crate::module_browser::{LearningModule, LearningModuleEntries, LearningModuleMetadata, Version};
 use crossterm::{
   event::{DisableMouseCapture, EnableMouseCapture},
   execute,
   terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::io::Stdout;
-use std::{io, thread, time::Duration};
+use std::{io, thread, time::Duration, vec};
 use tracing::info;
 use tui::layout::Direction::Horizontal;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::text::Span;
-use tui::widgets::{Axis, Chart, Dataset, GraphType, Paragraph};
+use tui::widgets::{Axis, Cell, Chart, Dataset, GraphType, Paragraph, Row, Table};
 use tui::{
   backend::CrosstermBackend,
   symbols,
@@ -79,10 +80,7 @@ fn draw_module_browser(f: &mut Frame<CrosstermBackend<Stdout>>) {
     .borders(Borders::ALL);
   f.render_widget(block, banner_layout);
 
-  let block = Block::default()
-    .title("Module browsing window")
-    .borders(Borders::ALL);
-  f.render_widget(block, browser_layout);
+  f.render_widget(module_selector_component(), browser_layout);
 
   let paragraph = Paragraph::new("This is where module info goes.\nTesting new lines as well.\n\tTabs don't work.").block(
     Block::default()
@@ -90,4 +88,43 @@ fn draw_module_browser(f: &mut Frame<CrosstermBackend<Stdout>>) {
       .borders(Borders::ALL),
   );
   f.render_widget(paragraph, module_info_layout);
+}
+
+fn module_selector_component<'a>() -> Table<'a> {
+  let modules = vec![
+    LearningModule {
+      metadata: LearningModuleMetadata {
+        name: "First module".to_string(),
+        author: "Hugh".to_string(),
+        updated: "".to_string(),
+        file_version: Version { major: 1, minor: 1, patch: 1 },
+        format_version: Version { major: 1, minor: 1, patch: 1 },
+      },
+      entries: LearningModuleEntries { entries: vec![] },
+    },
+    LearningModule {
+      metadata: LearningModuleMetadata {
+        name: "Second module".to_string(),
+        author: "Przemek".to_string(),
+        updated: "".to_string(),
+        file_version: Version { major: 1, minor: 1, patch: 1 },
+        format_version: Version { major: 1, minor: 1, patch: 1 },
+      },
+      entries: LearningModuleEntries { entries: vec![] },
+    },
+  ];
+  let mut rows = vec![Row::new(vec![Cell::from("Name"), Cell::from("Description"), Cell::from("Author")])];
+  for m in modules {
+    let cells = vec![Cell::from(m.clone().metadata.name), Cell::from("this is where a description would go"), Cell::from(m.metadata.author)];
+    let row = Row::new(cells);
+    rows.push(row);
+  }
+  let table = Table::new(rows)
+    .block(
+      Block::default()
+        .title("Module browsing window")
+        .borders(Borders::ALL),
+    )
+    .widths(&[Constraint::Percentage(20), Constraint::Percentage(60), Constraint::Percentage(20)]);
+  return table;
 }
