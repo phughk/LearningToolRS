@@ -1,11 +1,12 @@
 use crate::error::Error::{IOError, XMLReaderError};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]
 pub enum Error {
   IOError(std::io::Error),
   XMLReaderError(xml::reader::Error),
   SerdeError(serde_xml_rs::Error),
+  StateError(String),
 }
 
 impl Display for Error {
@@ -17,8 +18,9 @@ impl Display for Error {
       Error::XMLReaderError(cause) => {
         write!(f, "Issue with IO in XML: {}", cause)
       }
-      Error::SerdeError(cause) => {
-        write!(f, "Issue with XML serde: {}", cause)
+      Error::SerdeError(cause) => Debug::fmt(cause, f),
+      Error::StateError(cause) => {
+        write!(f, "Issue with terminal state: {}", cause)
       }
     }
   }

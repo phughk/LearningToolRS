@@ -8,12 +8,13 @@ use crossterm::{
   execute,
   terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use std::io::Stdout;
 use std::{io, thread, time::Duration};
 use tracing::info;
 use tui::{
   backend::CrosstermBackend,
   widgets::{Block, Borders},
-  Terminal,
+  Frame, Terminal,
 };
 
 fn main() -> Result<(), error::Error> {
@@ -26,6 +27,14 @@ fn main() -> Result<(), error::Error> {
   info!(modules_str, "processed modules");
   terminal_loop()
 }
+
+enum AppWindow {
+  ModuleBrowser,
+  QuizSetup,
+  QuizScore,
+  Quiz,
+}
+
 fn terminal_loop() -> Result<(), error::Error> {
   // setup terminal
   enable_raw_mode()?;
@@ -34,13 +43,14 @@ fn terminal_loop() -> Result<(), error::Error> {
   let backend = CrosstermBackend::new(stdout);
   let mut terminal = Terminal::new(backend)?;
 
-  terminal.draw(|f| {
-    let size = f.size();
-    let block = Block::default()
-      .title("Block")
-      .borders(Borders::ALL);
-    f.render_widget(block, size);
-  })?;
+  let appWindowState = AppWindow::ModuleBrowser;
+
+  match appWindowState {
+    AppWindow::ModuleBrowser => {
+      terminal.draw(draw_module_browser)?;
+    }
+    _ => return Err(error::Error::StateError("unrecognised state".to_string())),
+  }
 
   thread::sleep(Duration::from_millis(500));
 
@@ -50,4 +60,12 @@ fn terminal_loop() -> Result<(), error::Error> {
   terminal.show_cursor()?;
 
   Ok(())
+}
+
+fn draw_module_browser(f: &mut Frame<CrosstermBackend<Stdout>>) {
+  let size = f.size();
+  let block = Block::default()
+    .title("Block")
+    .borders(Borders::ALL);
+  f.render_widget(block, size);
 }
