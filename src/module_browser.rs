@@ -31,6 +31,8 @@ pub struct LearningModuleEntries {
 #[serde(rename_all = "kebab-case")]
 pub struct LearningModuleMetadata {
   pub name: String,
+  #[serde(default)]
+  pub description: String,
   pub author: String,
   pub updated: String,
   pub file_version: Version,

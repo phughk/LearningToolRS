@@ -20,6 +20,11 @@ use tui::{
   Frame, Terminal,
 };
 
+const MENU_BG: Color = Color::Yellow;
+const MENU_FG: Color = Color::Black;
+const SELECT_BG: Color = Color::Black;
+const SELECT_FG: Color = Color::Cyan;
+
 enum AppWindow {
   ModuleBrowser,
   QuizSetup,
@@ -95,6 +100,7 @@ fn module_selector_component<'a>() -> Table<'a> {
     LearningModule {
       metadata: LearningModuleMetadata {
         name: "First module".to_string(),
+        description: "What goes in here? Stays in here".to_string(),
         author: "Hugh".to_string(),
         updated: "".to_string(),
         file_version: Version { major: 1, minor: 1, patch: 1 },
@@ -105,6 +111,7 @@ fn module_selector_component<'a>() -> Table<'a> {
     LearningModule {
       metadata: LearningModuleMetadata {
         name: "Second module".to_string(),
+        description: "This would be a description".to_string(),
         author: "Przemek".to_string(),
         updated: "".to_string(),
         file_version: Version { major: 1, minor: 1, patch: 1 },
@@ -113,9 +120,9 @@ fn module_selector_component<'a>() -> Table<'a> {
       entries: LearningModuleEntries { entries: vec![] },
     },
   ];
-  let mut rows = vec![Row::new(vec![Cell::from("Name"), Cell::from("Description"), Cell::from("Author")])];
+  let mut rows = vec![Row::new(vec![Cell::from("Name"), Cell::from("Description"), Cell::from("Author")]).style(Style::default().bg(MENU_BG).fg(MENU_FG))];
   for m in modules {
-    let cells = vec![Cell::from(m.clone().metadata.name), Cell::from("this is where a description would go"), Cell::from(m.metadata.author)];
+    let cells = vec![Cell::from(m.metadata.name), Cell::from(m.metadata.description), Cell::from(m.metadata.author)];
     let row = Row::new(cells);
     rows.push(row);
   }
