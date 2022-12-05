@@ -11,6 +11,7 @@ use crossterm::{
 use std::io::Stdout;
 use std::{io, thread, time::Duration};
 use tracing::info;
+use tui::layout::{Constraint, Direction, Layout};
 use tui::{
   backend::CrosstermBackend,
   widgets::{Block, Borders},
@@ -52,7 +53,7 @@ fn terminal_loop() -> Result<(), error::Error> {
     _ => return Err(error::Error::StateError("unrecognised state".to_string())),
   }
 
-  thread::sleep(Duration::from_millis(500));
+  thread::sleep(Duration::from_millis(2000));
 
   // restore terminal
   disable_raw_mode()?;
@@ -64,8 +65,26 @@ fn terminal_loop() -> Result<(), error::Error> {
 
 fn draw_module_browser(f: &mut Frame<CrosstermBackend<Stdout>>) {
   let size = f.size();
+
+  let chunks = Layout::default()
+    .direction(Direction::Vertical)
+    .constraints(
+      [
+        Constraint::Length(3), // The height of the title bar
+        Constraint::Min(3),    // the height of the rest of content
+      ]
+      .as_ref(),
+    )
+    .split(size);
+  let (banner_layout, non_banner_layout) = (chunks[0], chunks[1]);
+
   let block = Block::default()
-    .title("Block")
+    .title("ModuleBrowser")
     .borders(Borders::ALL);
-  f.render_widget(block, size);
+  f.render_widget(block, banner_layout);
+
+  let block = Block::default()
+    .title("Non banner")
+    .borders(Borders::ALL);
+  f.render_widget(block, non_banner_layout);
 }
