@@ -8,6 +8,7 @@ use serde_xml_rs::de::Deserializer;
 use std::fmt::Formatter;
 use std::fs;
 use std::io;
+use tracing::error;
 
 use xml::reader::EventReader;
 
@@ -15,8 +16,7 @@ use xml::reader::EventReader;
 #[allow(dead_code)]
 pub struct LearningModule {
   pub metadata: LearningModuleMetadata,
-  #[serde(rename = "entries")]
-  pub entries: Vec<LearningModuleEntry>,
+  pub entries: LearningModuleEntries,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -105,6 +105,7 @@ pub struct Question {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[allow(dead_code)]
 pub struct Answer {
+  #[serde(default)]
   pub correct: bool,
   pub id: String,
   #[serde(default)]
@@ -141,13 +142,23 @@ pub fn list_modules(directory: &str) -> Result<Vec<LearningModule>, Error> {
   let paths = fs::read_dir(directory)?;
   let mut ret = Vec::new();
   for path in paths {
-    ret.push(read_module(
+    let module = read_module(
       path
+        .as_ref()
         .unwrap()
         .path()
         .display()
         .to_string(),
-    )?)
+    );
+    match module {
+      Ok(_) => ret.push(module?),
+      Err(e) => {
+        let e_str = format!("{e:?}");
+        let dir_e = path?;
+        let path_str = format!("{dir_e:?}");
+        error!(error = e_str, path = path_str, "Failed to handle module")
+      }
+    }
   }
   return Ok(ret);
 }
