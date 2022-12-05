@@ -13,8 +13,12 @@ use std::{io, thread, time::Duration};
 use tracing::info;
 use tui::layout::Direction::Horizontal;
 use tui::layout::{Constraint, Direction, Layout};
+use tui::style::{Color, Style};
+use tui::text::Span;
+use tui::widgets::{Axis, Chart, Dataset, GraphType, Paragraph};
 use tui::{
   backend::CrosstermBackend,
+  symbols,
   widgets::{Block, Borders},
   Frame, Terminal,
 };
@@ -81,15 +85,7 @@ fn draw_module_browser(f: &mut Frame<CrosstermBackend<Stdout>>) {
 
   let chunks = Layout::default()
     .direction(Direction::Horizontal)
-    .constraints(
-      [
-        Constraint::Percentage(50),
-        Constraint::Percentage(50),
-        // Constraint::Min(10),
-        // Constraint::Min(10)
-      ]
-      .as_ref(),
-    )
+    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
     .split(non_banner_layout);
   let (browser_layout, module_info_layout) = (chunks[0], chunks[1]);
 
@@ -103,8 +99,10 @@ fn draw_module_browser(f: &mut Frame<CrosstermBackend<Stdout>>) {
     .borders(Borders::ALL);
   f.render_widget(block, browser_layout);
 
-  let block = Block::default()
-    .title("Module info window")
-    .borders(Borders::ALL);
-  f.render_widget(block, module_info_layout);
+  let paragraph = Paragraph::new("This is where module info goes.\nTesting new lines as well.\n\tTabs don't work.").block(
+    Block::default()
+      .title("Module info window")
+      .borders(Borders::ALL),
+  );
+  f.render_widget(paragraph, module_info_layout);
 }
