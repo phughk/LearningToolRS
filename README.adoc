@@ -50,3 +50,80 @@ Sound:
 . Text match
 
 Animation:
+
+== User Interface
+(Generated with https://asciiflow.com/#/ ).
+
+=== Module browser
+
+Once started, the user is presented with a screen where the available modules are presented to them.
+They can use the arrow keys to browse the dataset modules.
+Pressing enter will pick the module to proceed to the main screen.
+
+```
+┌────────────────────────────────────────────────────────────┐
+│Current Directory                                           │
+├──────────────────────────────┬─────────────────────────────┤
+│                              │                             │
+│   Entry 1                    │  Module stats               │
+│                              │                             │
+│   Entry 2                    │    Last played              │
+│                              │                             │
+│   Entry 3                    │    Last score               │
+│                              │                             │
+│                              │    Progres                  │
+│                              │                             │
+│                              │    ETA completion           │
+│                              │                             │
+└──────────────────────────────┴─────────────────────────────┘
+```
+
+=== Quiz setup screen
+
+When a dataset has been picked, it must be configured for termination conditions.
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ Module name                                                │
+├──────────────────────────────┬─────────────────────────────┤
+│                              │                             │
+│  Option 1                    │  Module stats               │
+│  Input 1                     │                             │
+│                              │    Last played              │
+│  Option 2                    │                             │
+│  Input 2                     │    Last score               │
+│                              │                             │
+│                              │    Progres                  │
+│                              │                             │
+│                              │    ETA completion           │
+│                              │                             │
+└──────────────────────────────┴─────────────────────────────┘
+```
+
+=== Quiz screen loop
+
+Once the game has been set up, the game loop can begin.
+
+
+```
+ ┌────────────────────────────────────────────────────────────┐
+ │ Module name                                                │
+ ├────────────────────────────────────────────────────────────┤
+ │                                                            │
+ │             Question example goes here?                    │
+ │                                                            │
+ │                                                            │
+ │                                                            │
+ │  A  Prompt 1                         C Prompt 3            │
+ │                                                            │
+ │  B  Prompt 2                         D Prompt 4            │
+ │                                                            │
+ ├────────────────────────────────────────────────────────────┤
+ │ Progress stats go here                                     │
+ └────────────────────────────────────────────────────────────┘
+```
+
+=== Quiz score
+
+=== Quiz historic stats view
+
