@@ -11,6 +11,7 @@ use crossterm::{
 use std::io::Stdout;
 use std::{io, thread, time::Duration};
 use tracing::info;
+use tui::layout::Direction::Horizontal;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::{
   backend::CrosstermBackend,
@@ -44,16 +45,16 @@ fn terminal_loop() -> Result<(), error::Error> {
   let backend = CrosstermBackend::new(stdout);
   let mut terminal = Terminal::new(backend)?;
 
-  let appWindowState = AppWindow::ModuleBrowser;
+  let app_window_state = AppWindow::ModuleBrowser;
 
-  match appWindowState {
+  match app_window_state {
     AppWindow::ModuleBrowser => {
       terminal.draw(draw_module_browser)?;
     }
     _ => return Err(error::Error::StateError("unrecognised state".to_string())),
   }
 
-  thread::sleep(Duration::from_millis(2000));
+  thread::sleep(Duration::from_millis(10_000));
 
   // restore terminal
   disable_raw_mode()?;
@@ -78,13 +79,32 @@ fn draw_module_browser(f: &mut Frame<CrosstermBackend<Stdout>>) {
     .split(size);
   let (banner_layout, non_banner_layout) = (chunks[0], chunks[1]);
 
+  let chunks = Layout::default()
+    .direction(Direction::Horizontal)
+    .constraints(
+      [
+        Constraint::Percentage(50),
+        Constraint::Percentage(50),
+        // Constraint::Min(10),
+        // Constraint::Min(10)
+      ]
+      .as_ref(),
+    )
+    .split(non_banner_layout);
+  let (browser_layout, module_info_layout) = (chunks[0], chunks[1]);
+
   let block = Block::default()
     .title("ModuleBrowser")
     .borders(Borders::ALL);
   f.render_widget(block, banner_layout);
 
   let block = Block::default()
-    .title("Non banner")
+    .title("Module browsing window")
     .borders(Borders::ALL);
-  f.render_widget(block, non_banner_layout);
+  f.render_widget(block, browser_layout);
+
+  let block = Block::default()
+    .title("Module info window")
+    .borders(Borders::ALL);
+  f.render_widget(block, module_info_layout);
 }
