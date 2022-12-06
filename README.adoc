@@ -26,9 +26,11 @@ Program execution is as follows
 
 Text:
 
+. Flip-card (question shown, answer hidden - no point counting)
 . True/False
 . Single answer from list
 .. Property combinations
+.. Symmetric questions ("In Rust, what's another term for reference", "... another term for borrow")
 . Multiple answer from list
 . Free-text
 .. Exact match
@@ -37,6 +39,7 @@ Text:
 .. Subset match
 .. NLP match
 .. Accent match
+.. Phrase completion. "When a metric becomes a goal it ceases to..."be a reliable metric"
 . Audio match (Duolingo style)
 . Reverse
 . Pairing

@@ -32,5 +32,5 @@ fn main() -> Result<(), error::Error> {
   let modules = module_browser::list_modules("./data")?;
   let modules_str = format!("{modules:?}");
   info!(modules_str, "processed modules");
-  ui::terminal_loop()
+  ui::terminal_loop(&modules)
 }

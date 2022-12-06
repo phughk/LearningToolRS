@@ -5,6 +5,7 @@ use crossterm::{
   execute,
   terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use std::borrow::BorrowMut;
 use std::io::Stdout;
 use std::{io, thread, time::Duration, vec};
 use tracing::info;
@@ -32,7 +33,7 @@ enum AppWindow {
   Quiz,
 }
 
-pub fn terminal_loop() -> Result<(), Error> {
+pub fn terminal_loop(modules: &Vec<LearningModule>) -> Result<(), Error> {
   // setup terminal
   enable_raw_mode()?;
   let mut stdout = io::stdout();
@@ -44,9 +45,10 @@ pub fn terminal_loop() -> Result<(), Error> {
 
   match app_window_state {
     AppWindow::ModuleBrowser => {
-      terminal.draw(draw_module_browser)?;
+      let br = draw_module_browser(modules);
+      terminal.draw(br)?;
     }
-    _ => return Err(Error::StateError("unrecognised state".to_string())),
+    _ => return Err(Error::StateError("unrecognised state".to_string())), // TODO does this break the terminal since reset is not handled?
   }
 
   thread::sleep(Duration::from_millis(10_000));
@@ -59,70 +61,50 @@ pub fn terminal_loop() -> Result<(), Error> {
   Ok(())
 }
 
-fn draw_module_browser(f: &mut Frame<CrosstermBackend<Stdout>>) {
-  let size = f.size();
+fn draw_module_browser<'a>(modules: &'a Vec<LearningModule>) -> impl FnOnce(&'_ mut Frame<'_, CrosstermBackend<Stdout>>) -> () + 'a {
+  return |f| {
+    // let mut f = f.borrow_mut();
+    let size = f.size();
 
-  let chunks = Layout::default()
-    .direction(Direction::Vertical)
-    .constraints(
-      [
-        Constraint::Length(3), // The height of the title bar
-        Constraint::Min(3),    // the height of the rest of content
-      ]
-      .as_ref(),
-    )
-    .split(size);
-  let (banner_layout, non_banner_layout) = (chunks[0], chunks[1]);
+    let chunks = Layout::default()
+      .direction(Direction::Vertical)
+      .constraints(
+        [
+          Constraint::Length(3), // The height of the title bar
+          Constraint::Min(3),    // the height of the rest of content
+        ]
+        .as_ref(),
+      )
+      .split(size);
+    let (banner_layout, non_banner_layout) = (chunks[0], chunks[1]);
 
-  let chunks = Layout::default()
-    .direction(Direction::Horizontal)
-    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-    .split(non_banner_layout);
-  let (browser_layout, module_info_layout) = (chunks[0], chunks[1]);
+    let chunks = Layout::default()
+      .direction(Direction::Horizontal)
+      .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+      .split(non_banner_layout);
+    let (browser_layout, module_info_layout) = (chunks[0], chunks[1]);
 
-  let block = Block::default()
-    .title("ModuleBrowser")
-    .borders(Borders::ALL);
-  f.render_widget(block, banner_layout);
+    let block = Block::default()
+      .title("ModuleBrowser")
+      .borders(Borders::ALL);
+    f.render_widget(block, banner_layout);
 
-  f.render_widget(module_selector_component(), browser_layout);
+    f.render_widget(module_selector_component(modules), browser_layout);
 
-  let paragraph = Paragraph::new("This is where module info goes.\nTesting new lines as well.\n\tTabs don't work.").block(
-    Block::default()
-      .title("Module info window")
-      .borders(Borders::ALL),
-  );
-  f.render_widget(paragraph, module_info_layout);
+    let paragraph = Paragraph::new("This is where module info goes.\nTesting new lines as well.\n\tTabs don't work.").block(
+      Block::default()
+        .title("Module info window")
+        .borders(Borders::ALL),
+    );
+    f.render_widget(paragraph, module_info_layout);
+  };
 }
 
-fn module_selector_component<'a>() -> Table<'a> {
-  let modules = vec![
-    LearningModule {
-      metadata: LearningModuleMetadata {
-        name: "First module".to_string(),
-        description: "What goes in here? Stays in here".to_string(),
-        author: "Hugh".to_string(),
-        updated: "".to_string(),
-        file_version: Version { major: 1, minor: 1, patch: 1 },
-        format_version: Version { major: 1, minor: 1, patch: 1 },
-      },
-      entries: LearningModuleEntries { entries: vec![] },
-    },
-    LearningModule {
-      metadata: LearningModuleMetadata {
-        name: "Second module".to_string(),
-        description: "This would be a description".to_string(),
-        author: "Przemek".to_string(),
-        updated: "".to_string(),
-        file_version: Version { major: 1, minor: 1, patch: 1 },
-        format_version: Version { major: 1, minor: 1, patch: 1 },
-      },
-      entries: LearningModuleEntries { entries: vec![] },
-    },
-  ];
+fn module_selector_component<'a>(modules: &Vec<LearningModule>) -> Table<'a> {
   let mut rows = vec![Row::new(vec![Cell::from("Name"), Cell::from("Description"), Cell::from("Author")]).style(Style::default().bg(MENU_BG).fg(MENU_FG))];
   for m in modules {
-    let cells = vec![Cell::from(m.metadata.name), Cell::from(m.metadata.description), Cell::from(m.metadata.author)];
+    let cpy = m.clone();
+    let cells = vec![Cell::from(cpy.metadata.name), Cell::from(cpy.metadata.description), Cell::from(cpy.metadata.author)];
     let row = Row::new(cells);
     rows.push(row);
   }
