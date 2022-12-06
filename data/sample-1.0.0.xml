@@ -3,6 +3,7 @@
     <metadata>
         <name>Sample Dataset</name>
         <author>Hugh Kaznowski</author>
+        <description>Demo of capability</description>
         <updated>2022.12.02 22:07</updated>
         <file-version>1.0.0</file-version>
         <format-version>1.0.0</format-version>

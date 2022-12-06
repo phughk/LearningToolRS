@@ -27,8 +27,8 @@ const MENU_FG: Color = Color::Black;
 const SELECT_BG: Color = Color::Black;
 const SELECT_FG: Color = Color::Cyan;
 
-enum AppWindow {
-  ModuleBrowser,
+enum UIState {
+  ModuleBrowser { selected_item: u16 },
   QuizSetup,
   QuizScore,
   Quiz,
@@ -42,18 +42,19 @@ pub fn terminal_loop(modules: &Vec<LearningModule>) -> Result<(), Error> {
   let backend = CrosstermBackend::new(stdout);
   let mut terminal = Terminal::new(backend)?;
 
-  let app_window_state = AppWindow::ModuleBrowser;
-
-  match app_window_state {
-    AppWindow::ModuleBrowser => {
-      let br = draw_module_browser(modules);
-      terminal.draw(br)?;
-    }
-    _ => return Err(Error::StateError("unrecognised state".to_string())), // TODO does this break the terminal since reset is not handled?
-  }
-
+  let mut app_window_state = UIState::ModuleBrowser { selected_item: 0 };
   let poll_rate = Duration::from_millis(200);
+  let mut refresh = true;
   loop {
+    if refresh {
+      match app_window_state {
+        UIState::ModuleBrowser { selected_item } => {
+          terminal.draw(draw_module_browser(modules, UIState::ModuleBrowser { selected_item }))?;
+        }
+        _ => return Err(Error::StateError("unrecognised state".to_string())), // TODO does this break the terminal since reset is not handled?
+      }
+      refresh = false
+    }
     if crossterm::event::poll(poll_rate)? {
       match crossterm::event::read()? {
         Event::FocusGained => {}
@@ -61,6 +62,30 @@ pub fn terminal_loop(modules: &Vec<LearningModule>) -> Result<(), Error> {
         Event::Key(k) => {
           if k.code == KeyCode::Char('q') {
             break;
+          }
+          if k.code == KeyCode::Down {
+            match app_window_state {
+              UIState::ModuleBrowser { selected_item } => {
+                let updated = (selected_item + 1).clamp(0, modules.len() as u16 - 1);
+                if updated != selected_item {
+                  app_window_state = UIState::ModuleBrowser { selected_item: updated };
+                  refresh = true;
+                }
+              }
+              _ => {}
+            }
+          }
+          if k.code == KeyCode::Up {
+            match app_window_state {
+              UIState::ModuleBrowser { selected_item } => {
+                let updated = (selected_item - 1).clamp(0, modules.len() as u16 - 1);
+                if updated != selected_item {
+                  app_window_state = UIState::ModuleBrowser { selected_item: updated };
+                  refresh = true;
+                }
+              }
+              _ => {}
+            }
           }
         }
         Event::Mouse(_) => {}
@@ -78,7 +103,7 @@ pub fn terminal_loop(modules: &Vec<LearningModule>) -> Result<(), Error> {
   Ok(())
 }
 
-fn draw_module_browser<'a>(modules: &'a Vec<LearningModule>) -> impl FnOnce(&'_ mut Frame<'_, CrosstermBackend<Stdout>>) -> () + 'a {
+fn draw_module_browser<'a>(modules: &'a Vec<LearningModule>, state: UIState) -> impl FnOnce(&'_ mut Frame<'_, CrosstermBackend<Stdout>>) -> () + 'a {
   return |f| {
     // let mut f = f.borrow_mut();
     let size = f.size();
@@ -106,7 +131,7 @@ fn draw_module_browser<'a>(modules: &'a Vec<LearningModule>) -> impl FnOnce(&'_ 
       .borders(Borders::ALL);
     f.render_widget(block, banner_layout);
 
-    f.render_widget(module_selector_component(modules), browser_layout);
+    f.render_widget(module_selector_component(modules, state), browser_layout);
 
     let paragraph = Paragraph::new("This is where module info goes.\nTesting new lines as well.\n\tTabs don't work.").block(
       Block::default()
@@ -117,12 +142,26 @@ fn draw_module_browser<'a>(modules: &'a Vec<LearningModule>) -> impl FnOnce(&'_ 
   };
 }
 
-fn module_selector_component<'a>(modules: &Vec<LearningModule>) -> Table<'a> {
+fn module_selector_component<'a>(modules: &Vec<LearningModule>, state: UIState) -> Table<'a> {
   let mut rows = vec![Row::new(vec![Cell::from("Name"), Cell::from("Description"), Cell::from("Author")]).style(Style::default().bg(MENU_BG).fg(MENU_FG))];
-  for m in modules {
-    let cpy = m.clone();
-    let cells = vec![Cell::from(cpy.metadata.name), Cell::from(cpy.metadata.description), Cell::from(cpy.metadata.author)];
-    let row = Row::new(cells);
+  for i in 0..modules.len() {
+    let m = modules[i].clone();
+    let cells = vec![Cell::from(m.metadata.name), Cell::from(m.metadata.description), Cell::from(m.metadata.author)];
+    let mut row = Row::new(cells);
+    match state {
+      UIState::ModuleBrowser { selected_item } => {
+        if i == selected_item as usize {
+          row = row.style(
+            Style::default()
+              .bg(SELECT_BG)
+              .fg(SELECT_FG),
+          );
+        }
+      }
+      _ => {
+        // TODO this should throw or log
+      }
+    }
     rows.push(row);
   }
   let table = Table::new(rows)

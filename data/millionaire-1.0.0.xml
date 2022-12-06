@@ -2,10 +2,7 @@
 <learning-module>
     <metadata>
         <name>Millionaire</name>
-        <description>
-            This is a dataset to demonstrate a simple quiz.
-            It is deliberately small, because I needed a different dataset to the sample.
-        </description>
+        <description>Demonstrate a simple quiz. It is deliberately small, because I needed a different dataset to the sample.</description>
         <author>Hugh Kaznowski</author>
         <updated>2022.12.05 22:07</updated>
         <file-version>1.0.0</file-version>
