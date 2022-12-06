@@ -26,23 +26,23 @@ Program execution is as follows
 
 Text:
 
-. Flip-card (question shown, answer hidden - no point counting)
+. Flip-card (question shown, answer hidden - no point counting score)
 . True/False
 . Single answer from list
 .. Property combinations
-.. Symmetric questions ("In Rust, what's another term for reference", "... another term for borrow")
 . Multiple answer from list
 . Free-text
-.. Exact match
-.. Exact match numeric
-.. Within range numeric
-.. Subset match
-.. NLP match
-.. Accent match
+.. Exact match (reject non-perfect string comp)
+.. Exact match numeric (accept non-perfect string comp based on capitalisation, accents, hamming string threshold for typo etc)
+.. Within range numeric (ex value of Pi can be 3.1 or 3.14)
+.. Subset match (ex answer="apple" vs answer="an apple")
+.. NLP match (ex explain X)
+.. Accent match (ex duolingo)
 .. Phrase completion. "When a metric becomes a goal it ceases to..."be a reliable metric"
+.. Multiple answer (ex "name every...")
 . Audio match (Duolingo style)
-. Reverse
-. Pairing
+. Symmetric questions ("In Rust, what's another term for reference", "... another term for borrow")
+. Pairing (ex translating, matching items from left column to right column)
 . Order of list items (ex sequence of events)
 . Multiple categories (ex. list to 3 categories)
 
@@ -128,5 +128,8 @@ Once the game has been set up, the game loop can begin.
 
 === Quiz score
 
+<TODO>
+
 === Quiz historic stats view
 
+<TODO>

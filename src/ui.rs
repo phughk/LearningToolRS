@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::module_browser::{LearningModule, LearningModuleEntries, LearningModuleMetadata, Version};
+use crossterm::event::{Event, KeyCode, KeyEvent};
 use crossterm::{
   event::{DisableMouseCapture, EnableMouseCapture},
   execute,
@@ -51,7 +52,23 @@ pub fn terminal_loop(modules: &Vec<LearningModule>) -> Result<(), Error> {
     _ => return Err(Error::StateError("unrecognised state".to_string())), // TODO does this break the terminal since reset is not handled?
   }
 
-  thread::sleep(Duration::from_millis(10_000));
+  let poll_rate = Duration::from_millis(200);
+  loop {
+    if crossterm::event::poll(poll_rate)? {
+      match crossterm::event::read()? {
+        Event::FocusGained => {}
+        Event::FocusLost => {}
+        Event::Key(k) => {
+          if k.code == KeyCode::Char('q') {
+            break;
+          }
+        }
+        Event::Mouse(_) => {}
+        Event::Paste(_) => {}
+        Event::Resize(_, _) => {}
+      }
+    }
+  }
 
   // restore terminal
   disable_raw_mode()?;
